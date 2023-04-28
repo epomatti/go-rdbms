@@ -10,36 +10,57 @@ import (
 
 var db *sql.DB
 
+var dsn = mysql.Config{
+	User:   "root",
+	Passwd: "p4ssw0rd",
+	Net:    "tcp",
+	Addr:   "127.0.0.1:3306",
+	DBName: "sakila",
+}
+
 func main() {
-	dsn := mysql.Config{
-		User:   "root",
-		Passwd: "p4ssw0rd",
-		Net:    "tcp",
-		Addr:   "127.0.0.1:3306",
-		DBName: "sakila",
-	}
 
-	var err error
-	db, err = sql.Open("mysql", dsn.FormatDSN())
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	// Connect and ping the database
+	connect()
 	defer db.Close()
 
-	pingErr := db.Ping()
+	ping()
 
-	if pingErr != nil {
-		log.Fatal(pingErr)
-	}
-
-	fmt.Println("Connected!")
-
+	// Add an actor
 	actorID, err := addActor("JOE", "BERRY")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("ID of added actor: %v\n", actorID)
+
+	// Get an actor
+	actors, err := getActor(actorID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Actor found: %v\n", actors)
+}
+
+func connect() {
+	var err error
+	db, err = sql.Open("mysql", dsn.FormatDSN())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func ping() {
+	pingErr := db.Ping()
+	if pingErr != nil {
+		log.Fatal(pingErr)
+	}
+	fmt.Println("Connected!")
+}
+
+type Actor struct {
+	actor_id   int64
+	first_name string
+	last_name  string
 }
 
 func addActor(firstname, lastname string) (int64, error) {
@@ -52,4 +73,29 @@ func addActor(firstname, lastname string) (int64, error) {
 		return 0, fmt.Errorf("addActor: %v", err)
 	}
 	return id, nil
+}
+
+func getActor(actorID int64) ([]Actor, error) {
+	var actors []Actor
+
+	result, err := db.Query("SELECT actor_id, first_name, last_name FROM actor WHERE actor_id = ?", actorID)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetActor %v: %v", actorID, err)
+	}
+
+	defer result.Close()
+
+	for result.Next() {
+		var actor Actor
+		if err := result.Scan(&actor.actor_id, &actor.first_name, &actor.last_name); err != nil {
+			return nil, fmt.Errorf("GetActor %v: %v", actorID, err)
+		}
+		actors = append(actors, actor)
+
+		if err := result.Err(); err != nil {
+			return nil, fmt.Errorf("GetActor %v: %v", actorID, err)
+		}
+	}
+	return actors, nil
 }
