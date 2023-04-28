@@ -39,6 +39,21 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Actor found: %v\n", actors)
+
+	// Update
+	rowsUpdated, err := updateActor("JAMES", actorID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Total actors updated: %d\n", rowsUpdated)
+
+	// Delete
+	rowsDeleted, err := deleteActor(actorID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Total actors deleted: %d\n", rowsDeleted)
+
 }
 
 func connect() {
@@ -98,4 +113,28 @@ func getActor(actorID int64) ([]Actor, error) {
 		}
 	}
 	return actors, nil
+}
+
+func updateActor(firstname string, actorid int64) (int64, error) {
+	result, err := db.Exec("UPDATE actor SET first_name = ? WHERE actor_id = ?", firstname, actorid)
+	if err != nil {
+		return 0, fmt.Errorf("updateActor: %v", err)
+	}
+	id, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("updateActor: %v", err)
+	}
+	return id, nil
+}
+
+func deleteActor(actorid int64) (int64, error) {
+	result, err := db.Exec("DELETE from actor WHERE actor_id = ?", actorid)
+	if err != nil {
+		return 0, fmt.Errorf("deleteActor: %v", err)
+	}
+	id, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteActor: %v", err)
+	}
+	return id, nil
 }
