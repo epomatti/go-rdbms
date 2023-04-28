@@ -6,7 +6,7 @@ Start a MySQL instance:
 
 Get the Sakila example database and apply the scripts for the Sakila DB:
 
-  https://dev.mysql.com/doc/index-other.html
+  dev.mysql.com/doc/index-other.html
 
 To run the application:
 
